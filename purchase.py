@@ -1,76 +1,75 @@
 import pandas as pd
-
-
-df = pd.DataFrame({'C': [220, 180, 250, 190], 'category': ['None', 'None', 'None', 'None']})
-n = df.shape[0]
-
-for i in range(n):
-    if df.loc[i, 'C'] > 200:
-        df.loc[i, 'category'] = "rich"
-    else:
-        df.loc[i, 'category'] = "poor"
-
-print(df)
-
-# Sample data for Wednesday in April
-df1 = pd.DataFrame({'Price': [100, 120, 150, 90], 'Day': ['Wed', 'Wed', 'Wed', 'Wed'], 'Month': ['Apr', 'Apr', 'Apr', 'Apr'], 'Chg%': [5, -2, 8, -3]})
-
-mean_D = df1['Price'].mean()
-
-# Calculate the variance of the 'D' column
-variance_D = df1['Price'].var()
-
-print('Mean:', mean_D)
-print('Variance:', variance_D)
-
-# Select the rows where the day of the week is Wednesday
-wednesday_df = df1[df1['Day'] == 'Wed']
-
-# Calculate the mean of the 'Price' column for these rows
-wednesday_mean = wednesday_df['Price'].mean()
-
-# Calculate the mean of the 'Price' column for all rows (population mean)
-population_mean = df1['Price'].mean()
-
-print('Wednesday Mean:', wednesday_mean)
-print('Population Mean:', population_mean)
-
-April_df = df1[df1['Month'] == 'Apr']
-
-April_mean = April_df['Price'].mean()
-
-population_mean = df1['Price'].mean()
-
-print('April Mean:', April_mean)
-print('Population Mean:', population_mean)
-
-l2 = list(map(lambda v: v < 0, df1['Chg%']))
-
-# Store only the False values
-l2_false = [value for value in l2 if value is False]
-
-probability = (len(l2_false) / len(l2))*100
-
-print(f'Probability: {probability}%')
-
-l3 = list(map(lambda v: v > 0, wednesday_df['Chg%']))
-
-l3_True = [value for value in l3 if value is True]
-
-probability_wed = (len(l3_True) / len(l3))*100
-
-conditional_prob = probability_wed / wednesday_df.shape[0]
-
-print(f'profits on wednesday: {probability_wed}%')
-
-print(f'conditional probability: {conditional_prob}%')
-
-import seaborn as sns
+import numpy as np
 import matplotlib.pyplot as plt
 
-# Create a scatter plot of 'Chg%' data against the day of the week
-sns.scatterplot(x='Day', y='Chg%', data=df1)
+# A1. Matrix Operations
+data_purchase = pd.read_excel(r"C:\\Users\\mones\\Downloads\\Lab Session1 Data.xlsx", sheet_name="Purchase data")
+A = data_purchase.iloc[:, 1:4].to_numpy()
+C = data_purchase.iloc[:, 4].to_numpy()
 
-# Display the plot
+# A1. Activities
+dimensionality = A.shape[1]
+num_vectors = A.shape[0]
+rank_A = np.linalg.matrix_rank(A)
+pseudo_inverse_A = np.linalg.pinv(A)
+cost_vector = np.dot(pseudo_inverse_A, C)
+
+# Output A1 Results
+print(f"Dimensionality of the vector space: {dimensionality}")
+print(f"How many vectors exist in this vector space: {num_vectors}")
+print(f"Rank of Matrix A: {rank_A}")
+print("\nCost of each product available for sale:")
+print(cost_vector)
+
+# Regularization term (adjust the value as needed)
+reg_term = 1e-5
+
+# Calculate pseudo-inverse with regularization
+pseudo_inverse_A = np.linalg.pinv(A.T @ A + reg_term * np.eye(A.shape[1])) @ A.T @ C
+
+# A2. Calculate Model Vector X
+X = pseudo_inverse_A
+
+# A3. Customer Classification
+data_purchase['Customer_Class'] = np.where(data_purchase['Payment (Rs)'] > 200, 'RICH', 'POOR')
+
+# A4. Stock Price Analysis
+stock_data = pd.read_excel(r"C:\\Users\\mones\\Downloads\\Lab Session1 Data.xlsx", sheet_name="IRCTC Stock Price")
+
+mean_price = stock_data['Price'].mean()
+variance_price = stock_data['Price'].var()
+
+wednesday_prices = stock_data[stock_data['Day'] == 'Tue']['Price']  # Change 'Tue' to your actual day
+mean_wednesday_prices = wednesday_prices.mean()
+
+april_prices = stock_data[stock_data['Month'] == 'Jun']['Price']  # Change 'Jun' to your actual month
+mean_april_prices = april_prices.mean()
+
+loss_probability = len(stock_data[lambda x: x['Chg%'] < 0]) / len(stock_data)
+wednesday_profit_probability = len(wednesday_prices[lambda x: x > 0]) / len(wednesday_prices)
+conditional_profit_probability = len(wednesday_prices[lambda x: x > 0]) / len(wednesday_prices)
+
+print("Matrix A:")
+print(A)
+print("\nVector C:")
+print(C)
+print("\nPseudo-Inverse of A:")
+print(pseudo_inverse_A)
+print("\nModel Vector X:")
+print(X)
+print("\nCustomer Data with Classification:")
+print(data_purchase[['Customer', 'Payment (Rs)', 'Customer_Class']])
+print("\nStock Price Analysis:")
+print(f"Mean Price: {mean_price}")
+print(f"Variance of Price: {variance_price}")
+print(f"Mean Price on Tuesday: {mean_wednesday_prices}")
+print(f"Mean Price in June: {mean_april_prices}")
+print(f"Probability of Making a Loss: {loss_probability}")
+print(f"Probability of Making a Profit on Tuesday: {wednesday_profit_probability}")
+print(f"Conditional Probability of Making Profit on Tuesday: {conditional_profit_probability}")
+
+# Scatter plot
+plt.scatter(stock_data['Day'], stock_data['Chg%'])
+plt.xlabel('Day of the Week')
+plt.ylabel('Chg%')
 plt.show()
-
